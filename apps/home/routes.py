@@ -11,6 +11,47 @@ from apps.home import blueprint
 from flask import render_template, request
 from flask_login import login_required
 from jinja2 import TemplateNotFound
+import threading
+import time
+import speech_recognition as sr
+
+r = sr.Recognizer()
+
+def recognize():
+    with sr.Microphone() as source2:
+        print("Recognising...\n")
+        r.adjust_for_ambient_noise(source2, duration=0.2)
+        audio = r.listen(source2)
+        try:
+            text = r.recognize_google(audio)
+            return(str(text))
+        except sr.UnknownValueError:
+            print("Unable to recognize speech")
+        except sr.RequestError as e:
+            print("Error occurred during speech recognition:", str(e))
+
+def detect_slideshow():
+    while True:
+        if "Slide Show" in pyautogui.getActiveWindowTitle():
+            print("Switched to slideshow mode")
+            while("Slide Show" in pyautogui.getActiveWindowTitle()):
+                command = recognize()
+                if "next" in command:
+                    pyautogui.press("right")
+                elif "previous" in command:
+                    pyautogui.press("left")
+                else:
+                    pass
+                time.sleep(1)
+            print("Slideshow mode turned off")
+        time.sleep(1)
+
+def start_detecting_thread():
+    detection_thread = threading.Thread(target=detect_slideshow)
+    detection_thread.daemon = True
+    detection_thread.start()
+
+start_detecting_thread()
 
 
 @blueprint.route("/index")
