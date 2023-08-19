@@ -17,9 +17,18 @@ import sounddevice as sd
 import soundfile as sf
 import numpy as np
 
+import librosa
+import numpy as np
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+import os
+import joblib
+
 sample_rate = 44100 
-duration = 10
+duration = 1
 num_of_samples = 1
+current_usr = ""
 
 sentences = ["Machine learning 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20",
              "Birds can be found in every Habitat, from the tundra to the arid desert, and come in a dizzying array of shapes, sizes, and colours",
@@ -32,6 +41,63 @@ sentences = ["Machine learning 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 2
              "This is because different types of plastics are made of different chemicals, and mixing them can contaminate the batch",
              "Well, for one thing, it takes a lot less energy to recycle a plastic bottle than it does to create a new one from scratch",
              "Additionally, recycling helps to reduce the amount of plastic waste that ends up in our landfills and oceans"]
+
+def extract_features(file_path):
+    audio, sample_rate = librosa.load(file_path, res_type='kaiser_fast')
+    mfccs = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=35)
+    mfccs_scaled = np.mean(mfccs.T, axis=0)
+    return mfccs_scaled
+
+def train_model():
+    global current_usr
+    data_dir = 'C:/Users/Asus/.vscode/DTAP/voice samples'
+
+    features = []
+    labels = []
+
+    for user_folder in os.listdir(data_dir):
+        user_folder_path = os.path.join(data_dir, user_folder)
+        if os.path.isdir(user_folder_path):
+            for file_name in os.listdir(user_folder_path):
+                file_path = os.path.join(user_folder_path, file_name)
+                if file_path.endswith('.flac' or '.wav'):
+                    extracted_features = extract_features(file_path)
+                    features.append(extracted_features)
+                    labels.append(user_folder)
+                    print(f"Done extracting features from {file_name}")
+
+    data_dir = 'C:/Users/Asus/.vscode/DTAP/samples'
+    for file_name in os.listdir(data_dir):
+        file_path = os.path.join(data_dir, file_name)
+        if file_path.endswith('.flac' or '.wav'):
+            extracted_features = extract_features(file_path)
+            features.append(extracted_features)
+            labels.append(current_usr)
+            print(f"Done extracting features from {file_name}")
+
+
+    # print("Done")
+    X = np.array(features)
+    y = np.array(labels)
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    model = SVC(kernel='linear', probability=True)
+    model.fit(X_train, y_train)
+
+    joblib.dump(model, 'SVC_model_34ssamples.joblib')
+
+    y_train_pred = model.predict(X_train)
+    train_accuracy = np.mean(y_train_pred == y_train)
+
+    y_test_pred = model.predict(X_test)
+    test_accuracy = np.mean(y_test_pred == y_test)
+
+    print("\nTraining Accuracy:", train_accuracy)
+    print("\nTesting Accuracy:", test_accuracy)
+
+    print("\nClassification Report:")
+    print(classification_report(y_test, y_test_pred))
 
 
 @blueprint.route("/")
@@ -90,10 +156,13 @@ def login():
 
 @blueprint.route("/register", methods=["GET", "POST"])
 def register():
+    global current_usr
     create_account_form = CreateAccountForm(request.form)
     if "register" in request.form:
         username = request.form["username"]
         email = request.form["email"]
+        current_usr = username
+
 
         # Check usename exists
         user = Users.query.filter_by(username=username).first()

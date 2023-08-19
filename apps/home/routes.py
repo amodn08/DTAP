@@ -2,6 +2,7 @@
 """
 Copyright (c) 2019 - present AppSeed.us
 """
+import pyttsx3
 
 import subprocess
 
@@ -15,20 +16,46 @@ import threading
 import time
 import speech_recognition as sr
 
+voice_id = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0"
+
+#Function to speak
+def Speak(audio):
+    engine = pyttsx3.init()
+    # engine.setProperty("voice", voice_id)
+    engine.setProperty("rate", 140)
+    engine.say(audio)
+    engine.runAndWait()
+
 r = sr.Recognizer()
 
 def recognize():
-    with sr.Microphone() as source2:
-        print("Recognising...\n")
-        r.adjust_for_ambient_noise(source2, duration=0.2)
-        audio = r.listen(source2)
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print('Listening')
+        r.pause_threshold = 0.7
+        audio = r.listen(source)
         try:
-            text = r.recognize_google(audio)
-            return(str(text))
-        except sr.UnknownValueError:
-            print("Unable to recognize speech")
-        except sr.RequestError as e:
-            print("Error occurred during speech recognition:", str(e))
+            print("Recognizing")
+            Query = r.recognize_google(audio)
+            print("You: '", Query, "'")
+        except Exception as ex:
+            print(ex)
+            print("Pardon")
+            return "None"
+    import time
+    time.sleep(2)
+    return Query
+    # with sr.Microphone() as source2:
+    #     print("Recognising...\n")
+    #     r.adjust_for_ambient_noise(source2, duration=0.2)
+    #     audio = r.listen(source2)
+    #     try:
+    #         text = r.recognize_google(audio)
+    #         return text
+    #     except sr.UnknownValueError:
+    #         print("Unable to recognize speech")
+    #     except sr.RequestError as e:
+    #         print("Error occurred during speech recognition:", str(e))
 
 def detect_slideshow():
     while True:
