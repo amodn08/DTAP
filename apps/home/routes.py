@@ -120,6 +120,14 @@ def open_slideshow():
             subprocess.Popen([powerpoint_path, file_path])
             pyautogui.sleep(2)
             pyautogui.press("f5")
+            while("Slide Show" in pyautogui.getActiveWindowTitle):
+                command = recognize()
+                if "next" in command:
+                    pyautogui.press("right")
+                elif "previous" in command:
+                    pyautogui.press("left")
+                else:
+                    pass
             files = display_file()
             return render_template("home/index.html", segment="index", files=files)
 

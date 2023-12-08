@@ -42,6 +42,7 @@ sentences = ["Machine learning 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 2
              "Well, for one thing, it takes a lot less energy to recycle a plastic bottle than it does to create a new one from scratch",
              "Additionally, recycling helps to reduce the amount of plastic waste that ends up in our landfills and oceans"]
 
+
 def extract_features(file_path):
     audio, sample_rate = librosa.load(file_path, res_type='kaiser_fast')
     mfccs = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=35)
